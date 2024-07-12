@@ -1,10 +1,26 @@
-import tkinter
-import customtkinter as ctk
-from customtkinter import filedialog
-
-import pytube
-import ffmpeg
+import os
 import getpass
+
+try:
+    import customtkinter as ctk
+    from customtkinter import filedialog
+except ImportError:
+    os.system("pip install customtkinter")
+
+try:
+    import pytube
+except ImportError:
+    os.system("pip install pytube")
+
+try:
+    import ffmpeg
+except ImportError:
+    os.system("pip install ffmpeg-python")
+
+try:
+    from PIL import Image
+except ImportError:
+    os.system("pip install pillow")
 
 current_windows_username = getpass.getuser()
 
@@ -15,6 +31,7 @@ class App(ctk.CTk):
         self.title("YouTube Downloader")
         self.resizable(False, False)
         self.iconbitmap("res/app_icon.ico")
+        ctk.set_appearance_mode("dark")
 
         # add variables to app
         self.download_path = ctk.StringVar(value=f"C:/Users/{current_windows_username}/Downloads")
@@ -22,6 +39,11 @@ class App(ctk.CTk):
         self.output_var = ctk.StringVar()
         self.progress_var = ctk.StringVar(value="0 %")
         self.url_var = ctk.StringVar()
+
+        # add image varibales to app
+        # my_image = ctk.CTkImage(light_image=Image.open("<path to light mode image>"),
+        #                           dark_image=Image.open("<path to dark mode image>"),
+        #                           size=(30, 30))
 
         # add widgets to app
         title_label = ctk.CTkLabel(self, text="YouTube Downloader", fg_color="transparent", font=("Inter", 30))
@@ -53,6 +75,8 @@ class App(ctk.CTk):
         self.progress_label = ctk.CTkLabel(self, text="%", fg_color="transparent", font=("Inter", 14), textvariable=self.progress_var)
         self.progress_label.place(x=480, y=238)
 
+        # image_label = ctk.CTkLabel(self, image=my_image, text="")  # display image with a CTkLabel
+
         self.output_label = ctk.CTkLabel(self, text="test", fg_color="transparent", font=("Inter", 12), textvariable=self.output_var)
         self.output_label.place(x=50, y=400)
         
@@ -69,8 +93,14 @@ class App(ctk.CTk):
             self.output_var.set("Please enter an url!")
         else:
             self.yt = pytube.YouTube(url, on_progress_callback=self.on_progress)
-            data = self.get_video_streams(self.yt.streams.filter(progressive=True))
-            self.optionmenu.configure(values=[i for i in data], state="normal")
+            self.video_streams = self.get_video_streams(self.yt.streams.filter(progressive=True))
+            self.audio_streams = self.get_audio_streams(self.yt.streams)
+            streams = []
+            for i in self.video_streams:
+                streams.append(i)
+            for i in self.audio_streams:
+                streams.append(i)
+            self.optionmenu.configure(values=streams, state="normal")
 
 
     def test(self, option):
@@ -79,19 +109,29 @@ class App(ctk.CTk):
 
     def download(self):
         res = self.optionmenu_var.get()
-        data = self.get_video_streams(self.yt.streams.filter(progressive=True))
-        if res in data:
+        if res in self.video_streams:
             self.output_var.set(f"Downloading {self.yt.title}")
-            data[res][0].download(self.download_path.get())
+            self.video_streams[res][0].download(self.download_path.get())
             self.output_var.set(f"Downloaded : {self.yt.title}")
-            self.progressbar.set(0)
-            self.progress_var.set("0 %")
-            self.optionmenu_var.set("select quality")
-            self.optionmenu.configure(state="disabled")
-            self.url_var.set("")
-            self.download_btn.configure(state="disabled")
+        elif res in self.audio_streams:
+            self.output_var.set(f"Downloading {self.yt.title}")
+            self.audio_streams[res][0].download(self.download_path.get())
+            self.output_var.set(f"Downloaded Audio: {self.yt.title}")
         else:
             self.output_var.set("Quality not found!")
+
+        self.progressbar.set(0)
+        self.progress_var.set("0 %")
+        self.optionmenu_var.set("select quality")
+        self.optionmenu.configure(state="disabled")
+        self.url_var.set("")
+        self.download_btn.configure(state="disabled")
+
+    def download_audio(self):
+        pass
+
+    def download_thumb(self):
+        pass
 
     # Youtube callback function
     def on_progress(self, stream, chunk, bytes_remaining):
