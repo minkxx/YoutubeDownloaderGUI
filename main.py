@@ -8,112 +8,124 @@ import getpass
 
 current_windows_username = getpass.getuser()
 
-def get_video_streams(streams):
-    data = {}
-    res = ["1080p", "720p", "480p", "360p", "240p", "144p"]
-    for q in res:
-        for i in streams:
-            if i.resolution == q:
-                if q in data:
-                    data[q].append(i)
-                else:
-                    data[q] = [i]
-    return data
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.geometry("600x450")
+        self.title("YouTube Downloader")
+        self.resizable(False, False)
+        self.iconbitmap("res/app_icon.ico")
 
-def get_audio_streams(streams):
-    data = {}
-    abr = ["160kbps", "128kbps", "70kbps", "50kbps", "48kbps"]
-    for q in abr:
-        for i in streams:
-            if i.abr == q:
-                if q in data:
-                    data[q].append(i)
-                else:
-                    data[q] = [i]
-    return data
+        # add variables to app
+        self.download_path = ctk.StringVar(value=f"C:/Users/{current_windows_username}/Downloads")
+        self.optionmenu_var = ctk.StringVar(value="select quality")
+        self.output_var = ctk.StringVar()
+        self.progress_var = ctk.StringVar(value="0 %")
 
-def merge_audio_video(audio, video, output):
-    input_audio = ffmpeg.input(audio)
-    input_video = ffmpeg.input(video)
-    ffmpeg.concat(input_video, input_audio, v=1, a=1).output(output).run()
-    return output
+        # add widgets to app
+        title_label = ctk.CTkLabel(self, text="YouTube Downloader", fg_color="transparent", font=("Inter", 30))
+        title_label.place(x=170, y=20)
 
-#  GUI
+        self.url_entry = ctk.CTkEntry(self, placeholder_text="Enter url to download", font=("Inter", 12), width=400)
+        self.url_entry.place(x=50, y=70)
 
-app = ctk.CTk()
-app.geometry("600x450")
-app.title("YouTube Downloader")
-app.resizable(False, False)
-app.iconbitmap("res/app_icon.ico")
-ctk.set_appearance_mode("dark")
+        self.search_btn = ctk.CTkButton(self, text="Search", command=self.search, width=70)
+        self.search_btn.place(x=480, y=70)
+
+        self.dir_path_entry = ctk.CTkEntry(self, placeholder_text="Download path", font=("Inter", 12), width=400, textvariable=self.download_path)
+        self.dir_path_entry.place(x=50, y=120)
 
 
-#  GUI variables
-download_path = ctk.StringVar(value=f"C:/Users/{current_windows_username}/Downloads")
-optionmenu_var = ctk.StringVar(value="select quality")
-output_var = ctk.StringVar()
-progress_var = ctk.StringVar(value="0 %")
+        self.dir_browse_btn = ctk.CTkButton(self, text="Browse", command=self.browse_path, width=70)
+        self.dir_browse_btn.place(x=480, y=120)
 
-#  GUI button commands
-def browse_path():
-    download_Directory = filedialog.askdirectory(
-        initialdir="YOUR DIRECTORY PATH", title="Save Video")
- 
-    download_path.set(download_Directory)
+        self.optionmenu = ctk.CTkOptionMenu(self, variable=self.optionmenu_var, state="disabled", command=self.test)
+        self.optionmenu.place(x=50, y=170)
+        # optionmenu.configure(values=["hey", "hello"])
 
-def download():
-    url = url_entry.get()
-    res = optionmenu_var.get()
-    yt = pytube.YouTube(url, on_progress_callback=on_progress)
-    data = get_video_streams(yt.streams.filter(progressive=True))
-    if res in data:
-        output_var.set(f"Downloading {yt.title}")
-        data[res][0].download(download_path.get())
-        output_var.set(f"Downloaded : {yt.title}")
-        progressbar.set(0)
-        progress_var.set("0 %")
-    else:
-        output_var.set("Quality not found!")
+        self.download_btn = ctk.CTkButton(self, text="Download", command=self.download, width=100)
+        self.download_btn.place(x=450, y=170)
 
-# Youtube callback function
-def on_progress(stream, chunk, bytes_remaining):
-    total_size = stream.filesize
-    bytes_downloaded = total_size - bytes_remaining
-    completed = (bytes_downloaded/total_size) * 100
-    progress_var.set(f"{int(completed)} %")
-    progressbar.set(float(completed)/100)
-    progressbar.update()
+        self.progressbar = ctk.CTkProgressBar(self, width=400)
+        self.progressbar.set(0)
+        self.progressbar.place(x=50, y=250)
+
+        self.progress_label = ctk.CTkLabel(self, text="%", fg_color="transparent", font=("Inter", 14), textvariable=self.progress_var)
+        self.progress_label.place(x=480, y=238)
+
+        self.output_label = ctk.CTkLabel(self, text="test", fg_color="transparent", font=("Inter", 12), textvariable=self.output_var)
+        self.output_label.place(x=50, y=400)
+        
+    # add methods to app
+    def browse_path(self):
+        download_Directory = filedialog.askdirectory(
+            initialdir="YOUR DIRECTORY PATH", title="Save Video")
+    
+        self.download_path.set(download_Directory)
+
+    def search(self):
+        url = self.url_entry.get()
+        self.yt = pytube.YouTube(url, on_progress_callback=self.on_progress)
+        data = self.get_video_streams(self.yt.streams.filter(progressive=True))
+        self.optionmenu.configure(values=[i for i in data], state="normal")
 
 
-# GUI widgets
-title_label = ctk.CTkLabel(app, text="YouTube Downloader", fg_color="transparent", font=("Inter", 30))
-title_label.place(x=170, y=20)
-
-url_entry = ctk.CTkEntry(app, placeholder_text="Enter url to download", font=("Inter", 12), width=500)
-url_entry.place(x=50, y=70)
-
-dir_path_entry = ctk.CTkEntry(app, placeholder_text="Download path", font=("Inter", 12), width=400, textvariable=download_path)
-dir_path_entry.place(x=50, y=120)
+    def test(choice):
+        print(choice)
 
 
-dir_browse_btn = ctk.CTkButton(app, text="Browse", command=browse_path, width=70)
-dir_browse_btn.place(x=480, y=120)
+    def download(self):
+        res = self.optionmenu_var.get()
+        data = self.get_video_streams(self.yt.streams.filter(progressive=True))
+        if res in data:
+            self.output_var.set(f"Downloading {self.yt.title}")
+            data[res][0].download(self.download_path.get())
+            self.output_var.set(f"Downloaded : {self.yt.title}")
+            self.progressbar.set(0)
+            self.progress_var.set("0 %")
+        else:
+            self.output_var.set("Quality not found!")
 
-optionmenu = ctk.CTkOptionMenu(app, values=["1080p", "720p", "480p", "360p", "240p", "144p"], variable=optionmenu_var)
-optionmenu.place(x=50, y=170)
+    # Youtube callback function
+    def on_progress(self, stream, chunk, bytes_remaining):
+        total_size = stream.filesize
+        bytes_downloaded = total_size - bytes_remaining
+        completed = (bytes_downloaded/total_size) * 100
+        self.progress_var.set(f"{int(completed)} %")
+        self.progressbar.set(float(completed)/100)
+        self.progressbar.update()
+        
+    def get_video_streams(streams):
+        data = {}
+        res = ["1080p", "720p", "480p", "360p", "240p", "144p"]
+        for q in res:
+            for i in streams:
+                if i.resolution == q:
+                    if q in data:
+                        data[q].append(i)
+                    else:
+                        data[q] = [i]
+        return data
 
-download_btn = ctk.CTkButton(app, text="Download", command=download, width=100)
-download_btn.place(x=450, y=170)
+    def get_audio_streams(streams):
+        data = {}
+        abr = ["160kbps", "128kbps", "70kbps", "50kbps", "48kbps"]
+        for q in abr:
+            for i in streams:
+                if i.abr == q:
+                    if q in data:
+                        data[q].append(i)
+                    else:
+                        data[q] = [i]
+        return data
 
-progressbar = ctk.CTkProgressBar(app, width=400)
-progressbar.set(0)
-progressbar.place(x=50, y=250)
+    def merge_audio_video(audio, video, output):
+        input_audio = ffmpeg.input(audio)
+        input_video = ffmpeg.input(video)
+        ffmpeg.concat(input_video, input_audio, v=1, a=1).output(output).run()
+        return output
 
-progress_label = ctk.CTkLabel(app, text="%", fg_color="transparent", font=("Inter", 14), textvariable=progress_var)
-progress_label.place(x=480, y=238)
-
-output_label = ctk.CTkLabel(app, text="test", fg_color="transparent", font=("Inter", 12), textvariable=output_var)
-output_label.place(x=50, y=400)
 
 if __name__ == "__main__":
+    app = App()
     app.mainloop()
