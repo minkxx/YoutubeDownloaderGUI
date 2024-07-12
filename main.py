@@ -21,30 +21,30 @@ class App(ctk.CTk):
         self.optionmenu_var = ctk.StringVar(value="select quality")
         self.output_var = ctk.StringVar()
         self.progress_var = ctk.StringVar(value="0 %")
+        self.url_var = ctk.StringVar()
 
         # add widgets to app
         title_label = ctk.CTkLabel(self, text="YouTube Downloader", fg_color="transparent", font=("Inter", 30))
         title_label.place(x=170, y=20)
 
-        self.url_entry = ctk.CTkEntry(self, placeholder_text="Enter url to download", font=("Inter", 12), width=400)
-        self.url_entry.place(x=50, y=70)
+        self.url_entry = ctk.CTkEntry(self, placeholder_text="Enter url to download", font=("Inter", 12), width=400, textvariable=self.url_var)
+        self.url_entry.place(x=50, y=90)
 
         self.search_btn = ctk.CTkButton(self, text="Search", command=self.search, width=70)
-        self.search_btn.place(x=480, y=70)
+        self.search_btn.place(x=480, y=90)
 
         self.dir_path_entry = ctk.CTkEntry(self, placeholder_text="Download path", font=("Inter", 12), width=400, textvariable=self.download_path)
-        self.dir_path_entry.place(x=50, y=120)
+        self.dir_path_entry.place(x=50, y=140)
 
 
         self.dir_browse_btn = ctk.CTkButton(self, text="Browse", command=self.browse_path, width=70)
-        self.dir_browse_btn.place(x=480, y=120)
+        self.dir_browse_btn.place(x=480, y=140)
 
         self.optionmenu = ctk.CTkOptionMenu(self, variable=self.optionmenu_var, state="disabled", command=self.test)
-        self.optionmenu.place(x=50, y=170)
-        # optionmenu.configure(values=["hey", "hello"])
+        self.optionmenu.place(x=50, y=190)
 
-        self.download_btn = ctk.CTkButton(self, text="Download", command=self.download, width=100)
-        self.download_btn.place(x=450, y=170)
+        self.download_btn = ctk.CTkButton(self, text="Download", command=self.download, width=100, state="disabled")
+        self.download_btn.place(x=450, y=190)
 
         self.progressbar = ctk.CTkProgressBar(self, width=400)
         self.progressbar.set(0)
@@ -64,14 +64,17 @@ class App(ctk.CTk):
         self.download_path.set(download_Directory)
 
     def search(self):
-        url = self.url_entry.get()
-        self.yt = pytube.YouTube(url, on_progress_callback=self.on_progress)
-        data = self.get_video_streams(self.yt.streams.filter(progressive=True))
-        self.optionmenu.configure(values=[i for i in data], state="normal")
+        url = self.url_var.get()
+        if url == "":
+            self.output_var.set("Please enter an url!")
+        else:
+            self.yt = pytube.YouTube(url, on_progress_callback=self.on_progress)
+            data = self.get_video_streams(self.yt.streams.filter(progressive=True))
+            self.optionmenu.configure(values=[i for i in data], state="normal")
 
 
-    def test(choice):
-        print(choice)
+    def test(self, option):
+        self.download_btn.configure(state="normal")
 
 
     def download(self):
@@ -83,6 +86,10 @@ class App(ctk.CTk):
             self.output_var.set(f"Downloaded : {self.yt.title}")
             self.progressbar.set(0)
             self.progress_var.set("0 %")
+            self.optionmenu_var.set("select quality")
+            self.optionmenu.configure(state="disabled")
+            self.url_var.set("")
+            self.download_btn.configure(state="disabled")
         else:
             self.output_var.set("Quality not found!")
 
@@ -95,7 +102,7 @@ class App(ctk.CTk):
         self.progressbar.set(float(completed)/100)
         self.progressbar.update()
         
-    def get_video_streams(streams):
+    def get_video_streams(self, streams):
         data = {}
         res = ["1080p", "720p", "480p", "360p", "240p", "144p"]
         for q in res:
@@ -107,7 +114,7 @@ class App(ctk.CTk):
                         data[q] = [i]
         return data
 
-    def get_audio_streams(streams):
+    def get_audio_streams(self, streams):
         data = {}
         abr = ["160kbps", "128kbps", "70kbps", "50kbps", "48kbps"]
         for q in abr:
