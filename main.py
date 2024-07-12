@@ -4,6 +4,9 @@ from customtkinter import filedialog
 
 import pytube
 import ffmpeg
+import getpass
+
+current_windows_username = getpass.getuser()
 
 def get_video_streams(streams):
     data = {}
@@ -41,12 +44,12 @@ app = ctk.CTk()
 app.geometry("600x450")
 app.title("YouTube Downloader")
 app.resizable(False, False)
+app.iconbitmap("res/app_icon.ico")
 ctk.set_appearance_mode("dark")
-# ctk.set_default_color_theme("red")
 
 
 #  GUI variables
-download_path = ctk.StringVar(value="downloads/")
+download_path = ctk.StringVar(value=f"C:/Users/{current_windows_username}/Downloads")
 optionmenu_var = ctk.StringVar(value="select quality")
 output_var = ctk.StringVar()
 progress_var = ctk.StringVar(value="0 %")
@@ -62,7 +65,7 @@ def download():
     url = url_entry.get()
     res = optionmenu_var.get()
     yt = pytube.YouTube(url, on_progress_callback=on_progress)
-    data = get_video_streams(yt.streams)
+    data = get_video_streams(yt.streams.filter(progressive=True))
     if res in data:
         output_var.set(f"Downloading {yt.title}")
         data[res][0].download(download_path.get())
@@ -104,12 +107,12 @@ download_btn.place(x=450, y=170)
 
 progressbar = ctk.CTkProgressBar(app, width=400)
 progressbar.set(0)
-progressbar.place(x=50, y=300)
+progressbar.place(x=50, y=250)
 
 progress_label = ctk.CTkLabel(app, text="%", fg_color="transparent", font=("Inter", 14), textvariable=progress_var)
-progress_label.place(x=480, y=290)
+progress_label.place(x=480, y=238)
 
-output_label = ctk.CTkLabel(app, text="test", fg_color="transparent", font=("Inter", 16), textvariable=output_var)
+output_label = ctk.CTkLabel(app, text="test", fg_color="transparent", font=("Inter", 12), textvariable=output_var)
 output_label.place(x=50, y=400)
 
 if __name__ == "__main__":
