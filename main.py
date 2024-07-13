@@ -93,7 +93,7 @@ class App(ctk.CTk):
             self.output_var.set("Please enter an url!")
         else:
             self.yt = pytube.YouTube(url, on_progress_callback=self.on_progress)
-            self.video_streams = self.get_video_streams(self.yt.streams.filter(progressive=True))
+            self.video_streams = self.get_video_streams(self.yt.streams.filter(progressive=False))
             self.audio_streams = self.get_audio_streams(self.yt.streams)
             streams = []
             for i in self.video_streams:
@@ -111,7 +111,8 @@ class App(ctk.CTk):
         res = self.optionmenu_var.get()
         if res in self.video_streams:
             self.output_var.set(f"Downloading {self.yt.title}")
-            self.video_streams[res][0].download(self.download_path.get())
+            self.video_path = self.video_streams[res][0].download("temp")
+            self.audio_path = self.audio_streams["128kbps"][0].download("temp")
             self.output_var.set(f"Downloaded : {self.yt.title}")
         elif res in self.audio_streams:
             self.output_var.set(f"Downloading {self.yt.title}")
