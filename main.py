@@ -111,9 +111,13 @@ class App(ctk.CTk):
         res = self.optionmenu_var.get()
         if res in self.video_streams:
             self.output_var.set(f"Downloading {self.yt.title}")
-            self.video_path = self.video_streams[res][0].download("temp")
-            self.audio_path = self.audio_streams["128kbps"][0].download("temp")
+            video_path = self.video_streams[res][0].download(output_path="temp",filename_prefix="video_")
+            audio_path = self.audio_streams["128kbps"][0].download(output_path="temp", filename_prefix="audio_")
+            self.output_var.set("Merging...")
+            self.merge_audio_video(audio_path, video_path, f"{self.yt.title}.mp4")
             self.output_var.set(f"Downloaded : {self.yt.title}")
+            os.remove(video_path)
+            os.remove(audio_path)
         elif res in self.audio_streams:
             self.output_var.set(f"Downloading {self.yt.title}")
             self.audio_streams[res][0].download(self.download_path.get())
@@ -167,10 +171,10 @@ class App(ctk.CTk):
                         data[q] = [i]
         return data
 
-    def merge_audio_video(audio, video, output):
+    def merge_audio_video(self, audio, video, output):
         input_audio = ffmpeg.input(audio)
         input_video = ffmpeg.input(video)
-        ffmpeg.concat(input_video, input_audio, v=1, a=1).output(output).run()
+        ffmpeg.concat(input_video, input_audio, v=1, a=1).output(os.path.join(self.download_path.get(), output)).run()
         return output
 
 
