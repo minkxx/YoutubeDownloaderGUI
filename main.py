@@ -97,9 +97,9 @@ class App(ctk.CTk):
             self.audio_streams = self.get_audio_streams(self.yt.streams)
             streams = []
             for i in self.video_streams:
-                streams.append(i)
+                streams.append(f"video {i} {self.video_streams[i][0].filesize_mb:.2f} MB")
             for i in self.audio_streams:
-                streams.append(i)
+                streams.append(f"audio {i} {self.audio_streams[i][0].filesize_mb:.2f} MB")
             self.optionmenu.configure(values=streams, state="normal")
 
 
@@ -113,7 +113,6 @@ class App(ctk.CTk):
             self.output_var.set(f"Downloading {self.yt.title}")
             video_path = self.video_streams[res][0].download(output_path="temp",filename_prefix="video_")
             audio_path = self.audio_streams["128kbps"][0].download(output_path="temp", filename_prefix="audio_")
-            self.output_var.set("Merging...")
             self.merge_audio_video(audio_path, video_path, f"{self.yt.title}.mp4")
             self.output_var.set(f"Downloaded : {self.yt.title}")
             os.remove(video_path)

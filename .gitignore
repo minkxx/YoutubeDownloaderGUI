@@ -2,3 +2,5 @@ test.py
 temp/
 dist/
 build/
+*.exe
+*.spec
